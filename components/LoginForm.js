@@ -5,58 +5,62 @@ import {
   View,
   TextInput,
 } from 'react-native';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
+import { useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import React, {useEffect, useState} from 'react';
 import {Button, Checkbox,HelperText, Dialog,Portal,Paragraph} from 'react-native-paper';
 import {signInWithEmailAndPassword} from 'firebase/auth';
 import {auth} from '../firebase';
 import {ActivityIndicator} from 'react-native-paper';
+import { useDispatch } from 'react-redux'
+import { SetUserDetail } from '../redux/userDetails';
 
-const LoginForm = () => {
+const LoginForm = ({email,setEmail,password,setPassword}) => {
+
   const [passwordShow, setPasswordShow] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [checked, setChecked] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
   const [failed, setFailed] = useState(null);
-  const isFocused=useIsFocused();
   const navigation=useNavigation();
+  const dispatch=useDispatch();
   const signIn = async () => {
     let flag = hasErrors();
+ 
     setProcessing(true);
     if (flag === true) {
       await signInWithEmailAndPassword(auth, email, password)
         .then(userCredential => {
           // Signed in
           const user = userCredential.user;
-         
-          setProcessing(false);
-          setFailed(false);
-     
-          navigation.navigate('Home')
+          
+           storeUserDetails(user)
           // ...
         })
         .catch(error => {
           const errorCode = error.code;
           const errorMessage = error.message;
           setFailed(true);
-          console.log(errorMessage);
           setProcessing(false);
         });
     }
+    
   };
 
+  const storeUserDetails=(user)=>{
+    dispatch(SetUserDetail({'uid':user.uid,'email':user.email}))
+    setProcessing(false);
+    setFailed(false);
+
+    navigation.navigate('Home')
+  }
   const hasErrors = () => {
     if (!email.includes('@') && email.length > 0) return 'email';
     else if (password.length < 6 && password != '') return 'password';
     else return true;
   };
   
-  useEffect(() => {
-    setEmail('')
-    setPassword('')
-  }, [isFocused])
+
   
 
   return (
@@ -75,12 +79,13 @@ const LoginForm = () => {
       </Portal>
      </View>
       <View style={styles.emailContainer}>
-        <Icon name="user" style={{bottom: -5, color: '#A6A6A6'}} size={30} />
+        <Icon name="user" style={{bottom: -5,color: '#A6A6A6'}} size={30} />
         <TextInput
           placeholder="Email Address"
           placeholderTextColor="#A6A6A6"
-          style={styles.inputField}
-          onChangeText={text => setEmail(text)}
+          style={styles.emailField}
+          value={email}
+          onChangeText={text => setEmail(text.trim())}
         />
       </View>
       <View>
@@ -96,8 +101,9 @@ const LoginForm = () => {
         <TextInput
           placeholder="Password"
           placeholderTextColor="#A6A6A6"
-          style={styles.inputField}
+          style={styles.passwordField}
           secureTextEntry={!passwordShow}
+          value={password}
           onChangeText={text => setPassword(text)}
         />
         <TouchableOpacity onPress={() => setPasswordShow(!passwordShow)}>
@@ -158,7 +164,14 @@ const LoginForm = () => {
 export default LoginForm;
 
 const styles = StyleSheet.create({
-  inputField: {
+  emailField: {
+    width: '80%',
+    color: 'black',
+    paddingLeft: 15,
+    paddingBottom: 0,
+    marginRight:30,
+  },
+  passwordField: {
     width: '80%',
     color: 'black',
     paddingLeft: 15,
@@ -175,7 +188,6 @@ const styles = StyleSheet.create({
     width: '100%',
     borderBottomColor: '#A6A6A6',
     borderBottomWidth: 2,
-    paddingRight: '35%',
   },
   passwordContainer: {
     flexDirection: 'row',

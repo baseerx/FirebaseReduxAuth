@@ -5,27 +5,37 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import React, {useState} from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {createUserWithEmailAndPassword} from 'firebase/auth';
-import {auth} from '../firebase';
+import {auth, db} from '../firebase';
 import {HelperText} from 'react-native-paper';
-
-const Register = () => {
+import { useNavigation } from '@react-navigation/native';
+import {ActivityIndicator} from 'react-native-paper';
+import { collection, addDoc  } from "firebase/firestore";
+import { useDispatch } from 'react-redux';
+import { SetUserDetail } from '../redux/userDetails';
+const Register = ({name,email,password,setName,setEmail,setPassword}) => {
   const [passwordShow, setPasswordShow] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+ 
+  const [processing, setProcessing] = useState(false);
+
+  const navigation=useNavigation();
+
+  const dispatch=useDispatch();
+
+
   const registerUser = async () => {
     let flag = hasErrors();
-
+    setProcessing(true)
     if (flag) {
       await createUserWithEmailAndPassword(auth, email, password)
         .then(userCredential => {
           // Signed in
           const user = userCredential.user;
-
+          storeName(user)
           // ...
         })
         .catch(error => {
@@ -34,12 +44,35 @@ const Register = () => {
           // ..
         });
     }
+    else{
+      setProcessing(false)
+      Alert('fill fields correctly..')
+    }
   };
+   
+ const storeName=async(user)=>{
+  
+  try {
+    const docRef = await addDoc(collection(db, "user-detail"), {
+      name: name,
+      uid:user.uid     
+    });
+    dispatch(SetUserDetail({'uid':user.uid,'email':user.email}))
+    setProcessing(false)
+
+    navigation.navigate('Home')
+
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+ }
 
   const hasErrors = () => {
-    if (name.length===0) return 'name';
+    if (name.length>0 && name.length<3) return 'name';
     else if (!email.includes('@') && email.length > 0) return 'email';
     else if (password.length < 6 && password != '') return 'password';
+    else if (name.length===0 && email.length===0 && password.length===0)
+    return false;
     else return true;
   };
 
@@ -51,6 +84,7 @@ const Register = () => {
           placeholder="Name"
           placeholderTextColor="#A6A6A6"
           style={styles.inputField}
+          value={name}
           onChangeText={text => setName(text)}
         />
       </View>
@@ -67,13 +101,13 @@ const Register = () => {
         <TextInput
           placeholder="Email Address"
           placeholderTextColor="#A6A6A6"
+          value={email}
           style={styles.inputField}
-          onChangeText={text => setEmail(text)}
+          onChangeText={text => setEmail(text.trim())}
         />
       </View>
       <View>
         <HelperText
-          padding="none"
           type="error"
           visible={hasErrors() === 'email'}>
           Email address is invalid!
@@ -83,6 +117,7 @@ const Register = () => {
         <Icon name="lock" style={{bottom: -5, color: '#A6A6A6'}} size={30} />
         <TextInput
           placeholder="Password"
+          value={password}
           placeholderTextColor="#A6A6A6"
           style={styles.inputField}
           secureTextEntry={!passwordShow}
@@ -114,7 +149,11 @@ const Register = () => {
 
       <TouchableOpacity style={styles.registerBtn} onPress={registerUser}>
         <Text style={{fontSize: 15, color: '#fff', fontWeight: 'bold'}}>
-          Register
+        {processing === true ? (
+              <ActivityIndicator animating={true} size="small" color={'#fff'} />
+            ) : (
+              'Register'
+            )}
         </Text>
       </TouchableOpacity>
     </View>
@@ -141,7 +180,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     width: '100%',
-    top: 30,
     borderBottomColor: '#A6A6A6',
     borderBottomWidth: 2,
     paddingRight: '35%',
@@ -150,8 +188,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     width: '100%',
-    top: 30,
-    marginVertical: '10%',
     borderBottomColor: '#A6A6A6',
     borderBottomWidth: 2,
   },

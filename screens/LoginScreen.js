@@ -8,14 +8,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import LoginForm from '../components/LoginForm';
 import SocialLogin from '../components/SocialLogin';
 import ShadowBox from '../components/ShadowBox';
 import Register from './Register';
+import { useIsFocused } from '@react-navigation/native';
 
 const LoginScreen = () => {
   const [borderFlag, setborderFlag] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const isFocused=useIsFocused();
+
   const SwitchTabFunction = params => {
     if (params === 1) {
       setborderFlag(true);
@@ -23,7 +29,15 @@ const LoginScreen = () => {
       setborderFlag(false);
     }
   };
-
+ 
+  
+  useEffect(() => {
+    setEmail('')
+    setPassword('')
+    setName('')
+    setborderFlag(true)
+  }, [isFocused])
+ 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -81,7 +95,7 @@ const LoginScreen = () => {
             </View>
           </View>
 
-          <View>{borderFlag === true ? <LoginForm /> : <Register />}</View>
+          <View>{borderFlag === true ? <LoginForm email={email} setEmail={setEmail} password={password} setPassword={setPassword} /> : <Register email={email} setEmail={setEmail} password={password} setPassword={setPassword} name={name} setName={setName} />}</View>
 
           <View>
             <SocialLogin />

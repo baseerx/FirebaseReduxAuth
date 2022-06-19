@@ -4,15 +4,19 @@ import LoginScreen from './screens/LoginScreen';
 import {Provider as PaperProvider} from 'react-native-paper';
 import OnBoarding from './screens/OnBoarding';
 import MyStack from './navigation/MyStack';
+import {Provider} from 'react-redux';
+import {store} from './redux/store';
 
 const App = () => {
   return (
-    <PaperProvider>
-      <SafeAreaView style={styles.container}>
-        {/* <LoginScreen /> */}
-        <MyStack/>
-      </SafeAreaView>
-    </PaperProvider>
+    <Provider store={store}>
+      <PaperProvider>
+        <SafeAreaView style={styles.container}>
+          {/* <LoginScreen /> */}
+          <MyStack />
+        </SafeAreaView>
+      </PaperProvider>
+    </Provider>
   );
 };
 
