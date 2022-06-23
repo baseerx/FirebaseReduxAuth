@@ -4,37 +4,45 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  Alert,
 } from 'react-native';
-import { useNavigation} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import React, {useEffect, useState} from 'react';
-import {Button, Checkbox,HelperText, Dialog,Portal,Paragraph} from 'react-native-paper';
-import {signInWithEmailAndPassword} from 'firebase/auth';
+import {
+  Button,
+  Checkbox,
+  HelperText,
+  Dialog,
+  Portal,
+  Paragraph,
+} from 'react-native-paper';
+import {sendPasswordResetEmail, signInWithEmailAndPassword} from 'firebase/auth';
 import {auth} from '../firebase';
 import {ActivityIndicator} from 'react-native-paper';
-import { useDispatch } from 'react-redux'
-import { SetUserDetail } from '../redux/userDetails';
+import {useDispatch} from 'react-redux';
+import {SetUserDetail} from '../redux/userDetails';
 
-const LoginForm = ({email,setEmail,password,setPassword}) => {
-
+const LoginForm = ({email, setEmail, password, setPassword}) => {
   const [passwordShow, setPasswordShow] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [checked, setChecked] = useState(false);
 
   const [failed, setFailed] = useState(null);
-  const navigation=useNavigation();
-  const dispatch=useDispatch();
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   const signIn = async () => {
-    let flag = hasErrors();
- 
+    const flag = hasErrors();
+
     setProcessing(true);
+
     if (flag === true) {
       await signInWithEmailAndPassword(auth, email, password)
         .then(userCredential => {
           // Signed in
           const user = userCredential.user;
-          
-           storeUserDetails(user)
+
+          storeUserDetails(user);
           // ...
         })
         .catch(error => {
@@ -43,43 +51,56 @@ const LoginForm = ({email,setEmail,password,setPassword}) => {
           setFailed(true);
           setProcessing(false);
         });
+    } else {
+      setProcessing(false)
+      alert('fill fields correctly..')
+
     }
-    
   };
 
-  const storeUserDetails=(user)=>{
-    dispatch(SetUserDetail({'uid':user.uid,'email':user.email}))
+  const storeUserDetails = user => {
+    dispatch(SetUserDetail({uid: user.uid, email: user.email}));
     setProcessing(false);
     setFailed(false);
 
-    navigation.navigate('Home')
-  }
+    navigation.navigate('Home');
+  };
   const hasErrors = () => {
-    if (!email.includes('@') && email.length > 0) return 'email';
+    if (email.length == 0 && password == 0) return false;
+    else if (!email.includes('@') && email.length > 0) return 'email';
     else if (password.length < 6 && password != '') return 'password';
     else return true;
   };
-  
+ const forgotPassword=()=>{
+  email.length===0 ? alert('fill the email field..'):
 
-  
-
+  sendPasswordResetEmail(auth, email)
+  .then(() => {
+    
+  })
+  .catch((error) => {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // ..
+  });
+ }
   return (
     <View style={styles.loginformContainer}>
-     <View>
-     <Portal>
-     <Dialog visible={failed} onDismiss={failed}>
-        <Dialog.Title>Failed</Dialog.Title>
-        <Dialog.Content>
-          <Paragraph>User Not Found!!</Paragraph>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={()=>setFailed(false)}>Done</Button>
-        </Dialog.Actions>
-      </Dialog>
-      </Portal>
-     </View>
+      <View>
+        <Portal>
+          <Dialog visible={failed} onDismiss={failed}>
+            <Dialog.Title>Failed</Dialog.Title>
+            <Dialog.Content>
+              <Paragraph>User Not Found!!</Paragraph>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setFailed(false)}>Done</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+      </View>
       <View style={styles.emailContainer}>
-        <Icon name="user" style={{bottom: -5,color: '#A6A6A6'}} size={30} />
+        <Icon name="user" style={{bottom: -5, color: '#A6A6A6'}} size={30} />
         <TextInput
           placeholder="Email Address"
           placeholderTextColor="#A6A6A6"
@@ -142,7 +163,11 @@ const LoginForm = ({email,setEmail,password,setPassword}) => {
           </Text>
         </View>
         <View style={{right: -20}}>
+          <TouchableOpacity
+           onPress={forgotPassword}
+          >
           <Text style={{color: '#0386D0', fontSize: 12}}>Forgot Password</Text>
+          </TouchableOpacity>
         </View>
       </View>
       <View style={{alignItems: 'center'}}>
@@ -169,7 +194,7 @@ const styles = StyleSheet.create({
     color: 'black',
     paddingLeft: 15,
     paddingBottom: 0,
-    marginRight:30,
+    marginRight: 30,
   },
   passwordField: {
     width: '80%',

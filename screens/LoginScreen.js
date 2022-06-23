@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import LoginForm from '../components/LoginForm';
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   title: {
     width: 284,
     height: 50,
-    marginTop: 20,
+    marginTop: 30,
     alignItems: 'center',
   },
   txtTitle: {
